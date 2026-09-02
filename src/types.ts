@@ -9,6 +9,8 @@ export interface ModelDef {
   model: string;
   blurb: string;
   accent: string;
+  /** Default-on when an OpenRouter key is present (live mode). */
+  preferred?: boolean;
 }
 
 export interface Settings {

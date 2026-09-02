@@ -47,19 +47,19 @@ async function runJudge(
   bundle: string,
 ): Promise<string> {
   const prompt = `${JUDGE_PROMPT}\n\n${bundle}`;
+  if (settings.openrouterKey.trim()) {
+    return completeOpenRouter(
+      settings.openrouterKey.trim(),
+      "nvidia/nemotron-3.5-lightning:free",
+      prompt,
+      settings.timeoutMs,
+    );
+  }
   if (settings.groqKey.trim()) {
     return completeGroq(settings.groqKey.trim(), "llama-3.1-8b-instant", prompt, settings.timeoutMs);
   }
   if (settings.geminiKey.trim()) {
     return completeGemini(settings.geminiKey.trim(), "gemini-2.0-flash", prompt, settings.timeoutMs);
-  }
-  if (settings.openrouterKey.trim()) {
-    return completeOpenRouter(
-      settings.openrouterKey.trim(),
-      "meta-llama/llama-3.2-3b-instruct:free",
-      prompt,
-      settings.timeoutMs,
-    );
   }
   throw new Error("No API key for judge");
 }

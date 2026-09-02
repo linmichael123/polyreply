@@ -255,7 +255,7 @@ textarea.prompt:focus {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
   margin-top: 22px;
 }
@@ -467,6 +467,8 @@ textarea.prompt:focus {
 
 .modal {
   width: min(560px, 100%);
+  max-height: min(90vh, 760px);
+  overflow: auto;
   background: #141824;
   border: 1px solid var(--line-strong);
   border-radius: 22px;
@@ -485,8 +487,52 @@ textarea.prompt:focus {
   font-size: 0.92rem;
 }
 
-.field {
-  margin-bottom: 14px;
+.field-primary {
+  background: color-mix(in srgb, var(--accent-2) 8%, #10131b);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 28%, var(--line));
+  border-radius: 16px;
+  padding: 14px 14px 8px;
+}
+
+.field-hint {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.field-hint code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+}
+
+.field-link {
+  margin: 8px 0 6px;
+  font-size: 0.82rem;
+}
+
+.advanced {
+  margin: 4px 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 8px 12px 4px;
+  background: #10131b;
+}
+
+.advanced summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.88rem;
+  padding: 6px 0 10px;
+}
+
+.advanced[open] summary {
+  color: var(--text);
+}
+
+.advanced-lede {
+  margin: 0 0 12px;
+  color: var(--faint);
+  font-size: 0.82rem;
 }
 
 .field label {

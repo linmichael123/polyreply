@@ -1,7 +1,7 @@
 import type { Settings } from "./types";
 
 const SETTINGS_KEY = "polyreply:settings:v1";
-const SELECTED_KEY = "polyreply:selected:v1";
+const SELECTED_KEY = "polyreply:selected:v2";
 const DEMO_KEY = "polyreply:demo:v1";
 
 export const DEFAULT_SETTINGS: Settings = {

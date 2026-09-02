@@ -1,4 +1,4 @@
-import type { ModelDef } from "../types";
+import type { ModelDef, Settings } from "../types";
 
 export const CATALOG: ModelDef[] = [
   {
@@ -26,11 +26,47 @@ export const CATALOG: ModelDef[] = [
     accent: "#f4c430",
   },
   {
+    id: "openrouter:google/gemma-4-31b-it:free",
+    provider: "openrouter",
+    label: "Gemma 4 31B",
+    model: "google/gemma-4-31b-it:free",
+    blurb: "OpenRouter · free",
+    accent: "#22c55e",
+    preferred: true,
+  },
+  {
+    id: "openrouter:nvidia/nemotron-3.5-lightning:free",
+    provider: "openrouter",
+    label: "Nemotron Lightning",
+    model: "nvidia/nemotron-3.5-lightning:free",
+    blurb: "OpenRouter · free",
+    accent: "#34d399",
+    preferred: true,
+  },
+  {
+    id: "openrouter:z-ai/glm-5.2:free",
+    provider: "openrouter",
+    label: "GLM 5.2",
+    model: "z-ai/glm-5.2:free",
+    blurb: "OpenRouter · free",
+    accent: "#2dd4bf",
+    preferred: true,
+  },
+  {
+    id: "openrouter:minimax/minimax-m2.7:free",
+    provider: "openrouter",
+    label: "MiniMax M2.7",
+    model: "minimax/minimax-m2.7:free",
+    blurb: "OpenRouter · free",
+    accent: "#4ade80",
+    preferred: true,
+  },
+  {
     id: "groq:llama-3.1-8b-instant",
     provider: "groq",
     label: "Llama 3.1 8B",
     model: "llama-3.1-8b-instant",
-    blurb: "Groq · fast free tier",
+    blurb: "Groq · optional",
     accent: "#f55036",
   },
   {
@@ -38,7 +74,7 @@ export const CATALOG: ModelDef[] = [
     provider: "groq",
     label: "Llama 3.3 70B",
     model: "llama-3.3-70b-versatile",
-    blurb: "Groq · stronger free-tier pick",
+    blurb: "Groq · optional",
     accent: "#fb7185",
   },
   {
@@ -46,7 +82,7 @@ export const CATALOG: ModelDef[] = [
     provider: "gemini",
     label: "Gemini 2.0 Flash",
     model: "gemini-2.0-flash",
-    blurb: "Google AI Studio",
+    blurb: "Google AI Studio · optional",
     accent: "#4b8bff",
   },
   {
@@ -54,33 +90,46 @@ export const CATALOG: ModelDef[] = [
     provider: "gemini",
     label: "Gemini 2.5 Flash",
     model: "gemini-2.5-flash",
-    blurb: "Google AI Studio",
+    blurb: "Google AI Studio · optional",
     accent: "#60a5fa",
   },
-  {
-    id: "openrouter:google/gemma-3-4b-it:free",
-    provider: "openrouter",
-    label: "Gemma 3 4B",
-    model: "google/gemma-3-4b-it:free",
-    blurb: "OpenRouter · free",
-    accent: "#22c55e",
-  },
-  {
-    id: "openrouter:meta-llama/llama-3.2-3b-instruct:free",
-    provider: "openrouter",
-    label: "Llama 3.2 3B",
-    model: "meta-llama/llama-3.2-3b-instruct:free",
-    blurb: "OpenRouter · free",
-    accent: "#34d399",
-  },
 ];
+
+const PROVIDER_ORDER: Record<ModelDef["provider"], number> = {
+  demo: 0,
+  openrouter: 1,
+  groq: 2,
+  gemini: 3,
+};
 
 export function modelById(id: string): ModelDef | undefined {
   return CATALOG.find((m) => m.id === id);
 }
 
 export function modelsForMode(demoMode: boolean): ModelDef[] {
-  return CATALOG.filter((m) => (demoMode ? m.provider === "demo" : m.provider !== "demo"));
+  return CATALOG.filter((m) => (demoMode ? m.provider === "demo" : m.provider !== "demo")).sort(
+    (a, b) => PROVIDER_ORDER[a.provider] - PROVIDER_ORDER[b.provider],
+  );
+}
+
+export function preferredOpenRouterIds(): string[] {
+  return CATALOG.filter((m) => m.provider === "openrouter" && m.preferred).map((m) => m.id);
+}
+
+/** Live-mode defaults: OpenRouter :free set when that key exists; else keyed providers; else OR set. */
+export function defaultLiveModelIds(settings: Settings): string[] {
+  const live = modelsForMode(false);
+  const orDefaults = preferredOpenRouterIds();
+  if (settings.openrouterKey.trim()) return orDefaults;
+
+  const withKeys = live
+    .filter((m) => {
+      if (m.provider === "groq") return Boolean(settings.groqKey.trim());
+      if (m.provider === "gemini") return Boolean(settings.geminiKey.trim());
+      return false;
+    })
+    .map((m) => m.id);
+  return withKeys.length ? withKeys : orDefaults;
 }
 
 export const EXAMPLE_PROMPTS = [

@@ -47,4 +47,11 @@ export async function completeModel(
   }
 }
 
-export { CATALOG, EXAMPLE_PROMPTS, modelById, modelsForMode } from "./catalog";
+export {
+  CATALOG,
+  EXAMPLE_PROMPTS,
+  defaultLiveModelIds,
+  modelById,
+  modelsForMode,
+  preferredOpenRouterIds,
+} from "./catalog";

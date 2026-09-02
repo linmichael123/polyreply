@@ -1,5 +1,5 @@
 import { canJudge, compareResults, refineWithJudge } from "./compare";
-import { EXAMPLE_PROMPTS, canRun, completeModel, modelsForMode } from "./providers";
+import { EXAMPLE_PROMPTS, canRun, completeModel, defaultLiveModelIds, modelsForMode } from "./providers";
 import { render } from "./render";
 import {
   hasAnyKey,
@@ -13,10 +13,8 @@ import {
 import type { AppState, ModelResult, Settings } from "./types";
 
 function defaultSelected(demoMode: boolean, settings: Settings): string[] {
-  const visible = modelsForMode(demoMode);
-  if (demoMode) return visible.map((m) => m.id);
-  const withKeys = visible.filter((m) => canRun(m, settings, false)).map((m) => m.id);
-  return withKeys.length ? withKeys : visible.map((m) => m.id);
+  if (demoMode) return modelsForMode(true).map((m) => m.id);
+  return defaultLiveModelIds(settings);
 }
 
 function sanitizeSelected(ids: string[], demoMode: boolean, settings: Settings): string[] {
@@ -136,15 +134,22 @@ export function mount(root: HTMLElement): void {
         state.editing = null;
         paint();
         break;
-      case "save-settings":
+      case "save-settings": {
+        const hadOpenRouter = Boolean(state.settings.openrouterKey.trim());
         if (state.editing) {
           state.settings = { ...state.editing };
           saveSettings(state.settings);
+        }
+        const hasOpenRouter = Boolean(state.settings.openrouterKey.trim());
+        if (!state.demoMode && hasOpenRouter && !hadOpenRouter) {
+          state.selected = defaultSelected(false, state.settings);
+          saveSelected(state.selected);
         }
         state.settingsOpen = false;
         state.editing = null;
         paint();
         break;
+      }
       case "clear-keys":
         if (state.editing) {
           state.editing = {

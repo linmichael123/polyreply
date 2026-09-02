@@ -25,7 +25,11 @@ function cardBody(r: ModelResult): string {
     return `<p class="error">${escapeHtml(r.error || "Request failed")}</p>`;
   }
   if (r.status === "skipped") {
-    return `<p class="empty">Add a ${escapeHtml(modelById(r.modelId)?.provider ?? "")} key in Settings, or switch on Demo mode.</p>`;
+    const provider = modelById(r.modelId)?.provider;
+    const name =
+      provider === "openrouter" ? "OpenRouter" : provider === "groq" ? "Groq" : provider === "gemini" ? "Gemini" : provider ?? "provider";
+    const article = name === "OpenRouter" ? "an" : "a";
+    return `<p class="empty">Add ${article} ${escapeHtml(name)} key in Settings, or switch on Demo mode.</p>`;
   }
   if (r.status === "ok") {
     return `<div class="markdown">${renderMarkdown(r.text)}</div>`;
@@ -86,8 +90,8 @@ export function render(state: AppState): string {
           .join("")}
       </div>
       <p class="hint">${state.demoMode
-        ? "Demo mode uses mocked replies — no keys required. Turn it off and add keys to hit live providers."
-        : "Keys stay in this browser’s localStorage and are sent only to the provider you call. Models without a key are skipped."}</p>
+        ? "Demo mode uses mocked replies — no keys required. Turn it off and add an OpenRouter key to hit live free models."
+        : "One OpenRouter key runs several free models. Groq and Gemini are optional. Keys stay in this browser and are sent only to the provider you call."}</p>
     </section>
 
     ${shownResults.length
@@ -110,7 +114,7 @@ export function render(state: AppState): string {
 
     ${renderCompare(state)}
 
-    <p class="footer-note">Open source · MIT · No analytics · Keys never leave this device except to Groq, Google AI Studio, or OpenRouter.</p>
+    <p class="footer-note">Open source · MIT · No analytics · Keys never leave this device except to OpenRouter, or optionally Groq / Google AI Studio.</p>
     ${state.settingsOpen && state.editing ? renderSettings(state.editing) : ""}
   `;
 }
@@ -161,24 +165,29 @@ function renderSettings(s: Settings): string {
     <div class="modal-backdrop" data-action="close-settings">
       <div class="modal" role="dialog" aria-labelledby="settings-title" data-stop>
         <h2 id="settings-title">Settings</h2>
-        <p class="lede">API keys are stored only in localStorage on this device. PolyReply has no backend and ships with analytics off.</p>
-        <div class="field">
-          <label for="groqKey">Groq API key</label>
-          <input id="groqKey" type="password" autocomplete="off" data-setting="groqKey" value="${escapeHtml(s.groqKey)}" />
-        </div>
-        <div class="field">
-          <label for="geminiKey">Google AI Studio (Gemini) key</label>
-          <input id="geminiKey" type="password" autocomplete="off" data-setting="geminiKey" value="${escapeHtml(s.geminiKey)}" />
-        </div>
-        <div class="field">
+        <p class="lede">One OpenRouter key unlocks multiple free models. Keys are stored only in localStorage on this device. PolyReply has no backend and ships with analytics off.</p>
+        <div class="field field-primary">
           <label for="openrouterKey">OpenRouter key</label>
+          <p class="field-hint">Primary path — one key → multiple <code>:free</code> models</p>
           <input id="openrouterKey" type="password" autocomplete="off" data-setting="openrouterKey" value="${escapeHtml(s.openrouterKey)}" />
+          <p class="field-link"><a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">Get a free OpenRouter key</a></p>
         </div>
-        <div class="links">
-          <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">Get a Groq key</a>
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Get a Gemini key</a>
-          <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">Get an OpenRouter key</a>
-        </div>
+        <details class="advanced">
+          <summary>Optional providers — Groq &amp; Gemini</summary>
+          <p class="advanced-lede">Not required. Use these if you already have keys or want extra models beside OpenRouter.</p>
+          <div class="field">
+            <label for="groqKey">Groq API key</label>
+            <input id="groqKey" type="password" autocomplete="off" data-setting="groqKey" value="${escapeHtml(s.groqKey)}" />
+          </div>
+          <div class="field">
+            <label for="geminiKey">Google AI Studio (Gemini) key</label>
+            <input id="geminiKey" type="password" autocomplete="off" data-setting="geminiKey" value="${escapeHtml(s.geminiKey)}" />
+          </div>
+          <div class="links">
+            <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer">Get a Groq key</a>
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Get a Gemini key</a>
+          </div>
+        </details>
         <label class="check">
           <input type="checkbox" data-setting-bool="judgeEnabled" ${s.judgeEnabled ? "checked" : ""} />
           Refine the summary with a judge model when a key exists

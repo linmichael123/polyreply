@@ -84,11 +84,16 @@ export function mount(root: HTMLElement): void {
     });
 
     root.querySelectorAll("[data-action]").forEach((el) => {
+      const action = (el as HTMLElement).dataset.action;
+      if (action === "toggle-demo" || action === "toggle-model") {
+        el.addEventListener("change", () => handleAction(action, el as HTMLElement));
+        return;
+      }
       el.addEventListener("click", (event) => {
         const target = event.currentTarget as HTMLElement;
-        const action = target.dataset.action;
-        if (action === "close-settings" && event.target !== target) return;
-        handleAction(action, target);
+        const act = target.dataset.action;
+        if (act === "close-settings" && event.target !== target) return;
+        handleAction(act, target);
       });
     });
 
@@ -131,7 +136,9 @@ export function mount(root: HTMLElement): void {
           state.selectedDemo = demoIds();
           persistSelection();
         }
-        paint();
+        // Paint after the click/change finishes so the replacement checkbox
+        // does not eat the same pointer event and flip Demo back on.
+        window.setTimeout(() => paint(), 0);
         break;
       }
       case "toggle-model": {

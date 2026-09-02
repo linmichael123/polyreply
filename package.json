@@ -1,0 +1,39 @@
+{
+  "name": "polyreply",
+  "version": "1.0.0",
+  "private": false,
+  "license": "MIT",
+  "description": "One prompt → multiple free-tier LLMs → similarities and differences.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linmichael123/polyreply.git"
+  },
+  "homepage": "https://github.com/linmichael123/polyreply",
+  "bugs": {
+    "url": "https://github.com/linmichael123/polyreply/issues"
+  },
+  "keywords": [
+    "llm",
+    "compare",
+    "groq",
+    "gemini",
+    "openrouter",
+    "vite"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dompurify": "^3.2.6",
+    "marked": "^15.0.12"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
+  }
+}

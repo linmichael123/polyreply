@@ -39,8 +39,8 @@ function cardBody(r: ModelResult): string {
 
 export function render(state: AppState): string {
   const visible = modelsForMode(state.demoMode);
-  const selectedSet = new Set(state.selected);
-  const shownResults = state.results.filter((r) => visible.some((m) => m.id === r.modelId));
+  const selectedSet = new Set(state.demoMode ? state.selectedDemo : state.selectedLive);
+  const shownResults = state.results;
 
   return `
     <header class="topbar">
@@ -94,6 +94,8 @@ export function render(state: AppState): string {
         : "One OpenRouter key runs several free models. Groq and Gemini are optional. Keys stay in this browser and are sent only to the provider you call."}</p>
     </section>
 
+    ${shownResults.length || state.comparison || state.compareError
+      ? `<div id="results" class="results">
     ${shownResults.length
       ? `<section class="grid" aria-live="polite">${shownResults
           .map((r) => {
@@ -113,6 +115,8 @@ export function render(state: AppState): string {
       : ""}
 
     ${renderCompare(state)}
+    </div>`
+      : ""}
 
     <p class="footer-note">Open source · MIT · No analytics · Keys never leave this device except to OpenRouter, or optionally Groq / Google AI Studio.</p>
     ${state.settingsOpen && state.editing ? renderSettings(state.editing) : ""}

@@ -4,32 +4,38 @@ import { render } from "./render";
 import {
   hasAnyKey,
   loadDemoMode,
-  loadSelected,
+  loadSelection,
   loadSettings,
   saveDemoMode,
-  saveSelected,
+  saveSelection,
   saveSettings,
 } from "./storage";
 import type { AppState, ModelResult, Settings } from "./types";
 
-function defaultSelected(demoMode: boolean, settings: Settings): string[] {
-  if (demoMode) return modelsForMode(true).map((m) => m.id);
-  return defaultLiveModelIds(settings);
+function demoIds(): string[] {
+  return modelsForMode(true).map((m) => m.id);
 }
 
-function sanitizeSelected(ids: string[], demoMode: boolean, settings: Settings): string[] {
-  const allowed = new Set(modelsForMode(demoMode).map((m) => m.id));
+function liveAllowed(): Set<string> {
+  return new Set(modelsForMode(false).map((m) => m.id));
+}
+
+function sanitize(ids: string[], allowed: Set<string>, fallback: string[]): string[] {
   const filtered = ids.filter((id) => allowed.has(id));
-  return filtered.length ? filtered : defaultSelected(demoMode, settings);
+  return filtered.length ? filtered : fallback;
 }
 
 function createState(): AppState {
   const settings = loadSettings();
   const demoMode = loadDemoMode(!hasAnyKey(settings));
+  const demoFallback = demoIds();
+  const liveFallback = defaultLiveModelIds(settings);
+  const loaded = loadSelection(demoFallback, liveFallback);
   return {
     prompt: EXAMPLE_PROMPTS[0],
     demoMode,
-    selected: sanitizeSelected(loadSelected(defaultSelected(demoMode, settings)), demoMode, settings),
+    selectedDemo: sanitize(loaded.demo, new Set(demoFallback), demoFallback),
+    selectedLive: sanitize(loaded.live, liveAllowed(), liveFallback),
     settings,
     results: [],
     comparison: null,
@@ -39,12 +45,30 @@ function createState(): AppState {
   };
 }
 
+function activeSelected(state: AppState): string[] {
+  return state.demoMode ? state.selectedDemo : state.selectedLive;
+}
+
 export function mount(root: HTMLElement): void {
   const state = createState();
+  let scrolledForRun = false;
+
+  const persistSelection = () => {
+    saveSelection({ demo: state.selectedDemo, live: state.selectedLive });
+  };
 
   const paint = () => {
     root.innerHTML = render(state);
     bind();
+  };
+
+  const scrollResultsOnce = () => {
+    if (scrolledForRun) return;
+    const el = root.querySelector<HTMLElement>("#results");
+    if (!el) return;
+    scrolledForRun = true;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   };
 
   const bind = () => {
@@ -99,10 +123,14 @@ export function mount(root: HTMLElement): void {
         const input = target.querySelector("input") ?? (target as unknown as HTMLInputElement);
         state.demoMode = Boolean(input.checked);
         saveDemoMode(state.demoMode);
-        state.selected = defaultSelected(state.demoMode, state.settings);
-        saveSelected(state.selected);
-        state.results = [];
-        state.comparison = null;
+        if (!state.demoMode && state.selectedLive.length === 0) {
+          state.selectedLive = defaultLiveModelIds(state.settings);
+          persistSelection();
+        }
+        if (state.demoMode && state.selectedDemo.length === 0) {
+          state.selectedDemo = demoIds();
+          persistSelection();
+        }
         paint();
         break;
       }
@@ -110,11 +138,13 @@ export function mount(root: HTMLElement): void {
         const id = target.dataset.id;
         if (!id) return;
         const on = (target as HTMLInputElement).checked;
-        const set = new Set(state.selected);
-        if (on) set.add(id);
-        else set.delete(id);
-        state.selected = [...set];
-        saveSelected(state.selected);
+        const current = new Set(activeSelected(state));
+        if (on) current.add(id);
+        else current.delete(id);
+        const next = [...current];
+        if (state.demoMode) state.selectedDemo = next;
+        else state.selectedLive = next;
+        persistSelection();
         paint();
         break;
       }
@@ -134,22 +164,15 @@ export function mount(root: HTMLElement): void {
         state.editing = null;
         paint();
         break;
-      case "save-settings": {
-        const hadOpenRouter = Boolean(state.settings.openrouterKey.trim());
+      case "save-settings":
         if (state.editing) {
           state.settings = { ...state.editing };
           saveSettings(state.settings);
-        }
-        const hasOpenRouter = Boolean(state.settings.openrouterKey.trim());
-        if (!state.demoMode && hasOpenRouter && !hadOpenRouter) {
-          state.selected = defaultSelected(false, state.settings);
-          saveSelected(state.selected);
         }
         state.settingsOpen = false;
         state.editing = null;
         paint();
         break;
-      }
       case "clear-keys":
         if (state.editing) {
           state.editing = {
@@ -175,13 +198,14 @@ export function mount(root: HTMLElement): void {
       return;
     }
 
-    const visible = modelsForMode(state.demoMode).filter((m) => state.selected.includes(m.id));
+    const visible = modelsForMode(state.demoMode).filter((m) => activeSelected(state).includes(m.id));
     if (!visible.length) {
       state.compareError = "Select at least one model.";
       paint();
       return;
     }
 
+    scrolledForRun = false;
     state.running = true;
     state.comparison = null;
     state.compareError = undefined;
@@ -192,6 +216,7 @@ export function mount(root: HTMLElement): void {
       error: canRun(m, state.settings, state.demoMode) ? undefined : "Missing API key",
     }));
     paint();
+    scrollResultsOnce();
 
     await Promise.all(
       visible.map(async (model, index) => {

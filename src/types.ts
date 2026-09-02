@@ -48,7 +48,8 @@ export interface Comparison {
 export interface AppState {
   prompt: string;
   demoMode: boolean;
-  selected: string[];
+  selectedDemo: string[];
+  selectedLive: string[];
   settings: Settings;
   results: ModelResult[];
   comparison: Comparison | null;

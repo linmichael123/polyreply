@@ -253,6 +253,10 @@ textarea.prompt:focus {
   font-size: 0.85rem;
 }
 
+.results {
+  scroll-margin-top: 24px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
